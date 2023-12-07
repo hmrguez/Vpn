@@ -24,6 +24,8 @@ SERVER_PORT = 7000
 raw_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
 raw_socket.bind(('localhost', SERVER_PORT))
 
+connection_states = {}
+
 while True:
     # Receive data
     data, addr = raw_socket.recvfrom(65535)
@@ -44,10 +46,9 @@ while True:
     urgent_pointer = tcp_data[8]
 
     # Identify and handle SYN packets
-    # flags = tcp_data[5]
-    # if flags & 2:  # SYN flag set
-    #     handle_syn(data, addr[0], tcp_data[0])
-    #     continue
+    if flags & 2 and dest_port == SERVER_PORT:  # SYN flag set
+        handle_syn(data, addr[0], tcp_data[0])
+        continue
 
     # Check if the packet matches the filter criteria
     if dest_port == SERVER_PORT:
