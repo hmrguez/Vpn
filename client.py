@@ -3,13 +3,13 @@ import struct
 
 # Define server address and port
 SERVER_ADDRESS = "127.0.0.1"
-SERVER_PORT = 8080
+SERVER_PORT = 8000
 
 # Create a raw socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
 
 # Define source and destination ports
-SOURCE_PORT = 8070
+SOURCE_PORT = 1234
 DEST_PORT = SERVER_PORT
 
 # Define sequence and acknowledgement numbers
@@ -21,8 +21,6 @@ FLAGS = 2
 
 # Build the TCP header
 tcp_header = struct.pack("!HHLLBBH", SOURCE_PORT, DEST_PORT, SEQ_NUM, ACK_NUM, 5 << 4, FLAGS, 0)
-
-print(len(tcp_header))
 
 # Create an empty data payload
 data = b"Hello from the client!"

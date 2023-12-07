@@ -19,8 +19,9 @@ def handle_other_flags(flags):
 
 
 # Create and bind raw socket
+PORT = 8000
 raw_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
-raw_socket.bind(('localhost', 0))
+raw_socket.bind(('localhost', PORT))
 
 while True:
     # Receive data
