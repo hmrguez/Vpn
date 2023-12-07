@@ -10,7 +10,7 @@ def handle_syn(data, source_address, source_port):
 
 def process_data(data):
     # ... interpret and handle data based on content ...
-    print("Data: ", data)
+    print("Process data not implemented")
 
 
 def handle_other_flags(flags):
@@ -42,22 +42,30 @@ while True:
     checksum = tcp_data[7]
     urgent_pointer = tcp_data[8]
 
-    # Print basic information
-    print(f"Paquete TCP recibido de {addr}")
-    print(f"Puerto de origen: {source_port}, Puerto de destino: {dest_port}")
-    print(f"Número de secuencia: {sequence_number}, Número de ACK: {ack_number}")
-    print(f"Flags: {flags}, Ventana: {window}, Checksum: {checksum}")
-    print("---------------------------------------------------------")
-
     # Identify and handle SYN packets
     # flags = tcp_data[5]
     # if flags & 2:  # SYN flag set
     #     handle_syn(data, addr[0], tcp_data[0])
     #     continue
 
-    # Process data based on other flags
-    process_data(data[36:])
-    handle_other_flags(flags)
+    # Check if the packet matches the filter criteria
+    if dest_port == PORT:
+
+        # Print basic information
+        print("Basic Information: ")
+        print(f"Paquete TCP recibido de {addr}")
+        print(f"Puerto de origen: {source_port}, Puerto de destino: {dest_port}")
+        print(f"Número de secuencia: {sequence_number}, Número de ACK: {ack_number}")
+        print(f"Flags: {flags}, Ventana: {window}, Checksum: {checksum}")
+        print("---------------------------------------------------------")
+
+        # Process the packet
+        print("Received valid packet:", data[36:])
+        process_data(data[36:])
+    else:
+        # Discard the packet
+        print("Ignoring packet coming from: ", source_port)
+        print("---------------------------------------------------------")
 
 # Close socket
 raw_socket.close()
