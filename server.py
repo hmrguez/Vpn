@@ -19,9 +19,10 @@ def handle_other_flags(flags):
 
 
 # Create and bind raw socket
-PORT = 7000
+SERVER_ADDRESS = "127.0.0.1"
+SERVER_PORT = 7000
 raw_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
-raw_socket.bind(('localhost', PORT))
+raw_socket.bind(('localhost', SERVER_PORT))
 
 while True:
     # Receive data
@@ -49,7 +50,7 @@ while True:
     #     continue
 
     # Check if the packet matches the filter criteria
-    if dest_port == PORT:
+    if dest_port == SERVER_PORT:
 
         # Print basic information
         print("Basic Information: ")
@@ -60,8 +61,8 @@ while True:
         print("---------------------------------------------------------")
 
         # Process the packet
-        print("Received valid packet:", data[36:])
-        process_data(data[36:])
+        print("Received valid packet:", data[38:])
+        process_data(data[38:])
     else:
         # Discard the packet
         print("Ignoring packet coming from: ", source_port)

@@ -19,9 +19,10 @@ def handle_other_flags(flags):
 
 
 # Create and bind raw socket
-PORT = 8000
+SERVER_ADDRESS = "127.0.0.1"
+SERVER_PORT = 8000
 raw_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
-raw_socket.bind(('localhost', PORT))
+raw_socket.bind(('localhost', SERVER_PORT))
 
 while True:
     # Receive data
@@ -49,19 +50,35 @@ while True:
     #     continue
 
     # Check if the packet matches the filter criteria
-    if dest_port == PORT:
+    if dest_port == SERVER_PORT:
+
+        # Extract destination port from data
+        forward_port = struct.unpack('!H', data[36:38])[0]
+
+        # Generate new TCP header with server port as source and dynamic port from data
+        new_source_port = SERVER_PORT
+        new_tcp_header = struct.pack("!HHLLBBH", new_source_port, forward_port, 100, 0, 5 << 4, 2, 0)
+
+        # Combine new header and original data for forwarding
+        forwarded_packet = new_tcp_header + data[36:]
+
+        # Send the forwarded packet
+        raw_socket.sendto(forwarded_packet, (SERVER_ADDRESS, forward_port))
+
+        # Print confirmation
+        print(f"Forwarded packet to {SERVER_ADDRESS}:{forward_port}")
 
         # Print basic information
-        print("Basic Information: ")
-        print(f"Paquete TCP recibido de {addr}")
-        print(f"Puerto de origen: {source_port}, Puerto de destino: {dest_port}")
-        print(f"Número de secuencia: {sequence_number}, Número de ACK: {ack_number}")
-        print(f"Flags: {flags}, Ventana: {window}, Checksum: {checksum}")
-        print("---------------------------------------------------------")
+        # print("Basic Information: ")
+        # print(f"Paquete TCP recibido de {addr}")
+        # print(f"Puerto de origen: {source_port}, Puerto de destino: {dest_port}")
+        # print(f"Número de secuencia: {sequence_number}, Número de ACK: {ack_number}")
+        # print(f"Flags: {flags}, Ventana: {window}, Checksum: {checksum}")
+        # print("---------------------------------------------------------")
 
         # Process the packet
-        print("Received valid packet:", data[36:])
-        process_data(data[36:])
+        # print("Received valid packet:", data[36:])
+        # process_data(data[36:])
     else:
         # Discard the packet
         print("Ignoring packet coming from: ", source_port)
