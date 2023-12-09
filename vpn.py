@@ -26,10 +26,11 @@ while True:
 
         # Check checksum
         received_checksum = udp_data[3]
+        sender_addr, sender_port = addr
 
         # Set checksum field to zero before calculating checksum
         zero_checksum_header = udp_header[:6] + b'\x00\x00' + udp_header[8:]
-        calculated_checksum = udp_checksum(SERVER_ADDRESS, SERVER_ADDRESS, zero_checksum_header + data[28:])
+        calculated_checksum = udp_checksum(sender_addr, SERVER_ADDRESS, zero_checksum_header + data[28:])
 
         if received_checksum != calculated_checksum:
             print("Checksum does not match, packet might be corrupted")
