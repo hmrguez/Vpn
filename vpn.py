@@ -2,7 +2,6 @@ from checksum_utils import udp_checksum
 import socket
 import struct
 
-
 # Create and bind raw socket
 SERVER_ADDRESS = "127.0.0.1"
 SERVER_PORT = 8000
