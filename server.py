@@ -1,9 +1,31 @@
 import socket
 import struct
 
+
+# Helper methods
+def udp_checksum(source_ip, dest_ip, udp_packet):
+    pseudo_header = struct.pack('!4s4sBBH',
+                                socket.inet_aton(source_ip),
+                                socket.inet_aton(dest_ip),
+                                0,
+                                socket.IPPROTO_UDP,
+                                len(udp_packet))
+    return calc_checksum(pseudo_header + udp_packet)
+
+
+def calc_checksum(packet):
+    if len(packet) % 2 != 0:
+        packet += b'\0'
+    res = sum((int.from_bytes(packet[i:i + 2], 'big') for i in range(0, len(packet), 2)))
+    res = (res >> 16) + (res & 0xffff)
+    res += res >> 16
+    return ~res & 0xffff
+
+
 def process_data(data):
     # ... interpret and handle data based on content ...
     print("Process data not implemented")
+
 
 # Create and bind raw socket
 SERVER_ADDRESS = "127.0.0.1"
@@ -27,6 +49,17 @@ while True:
 
     # Check if the packet matches the filter criteria
     if dest_port == SERVER_PORT:
+
+        # Check checksum
+        received_checksum = udp_data[3]
+
+        # Set checksum field to zero before calculating checksum
+        zero_checksum_header = udp_header[:6] + b'\x00\x00' + udp_header[8:]
+        calculated_checksum = udp_checksum(SERVER_ADDRESS, SERVER_ADDRESS, zero_checksum_header + data[28:])
+
+        if received_checksum != calculated_checksum:
+            print("Checksum does not match, packet might be corrupted")
+
         # Print basic information
         print("Basic Information: ")
         print(f"UDP packet received from {addr}")

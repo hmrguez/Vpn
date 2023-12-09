@@ -1,6 +1,27 @@
 import socket
 import struct
 
+
+# Helper methods
+def udp_checksum(source_ip, dest_ip, udp_packet):
+    pseudo_header = struct.pack('!4s4sBBH',
+                                socket.inet_aton(source_ip),
+                                socket.inet_aton(dest_ip),
+                                0,
+                                socket.IPPROTO_UDP,
+                                len(udp_packet))
+    return calc_checksum(pseudo_header + udp_packet)
+
+
+def calc_checksum(packet) -> int:
+    if len(packet) % 2 != 0:
+        packet += b'\0'
+    res = sum((int.from_bytes(packet[i:i + 2], 'big') for i in range(0, len(packet), 2)))
+    res = (res >> 16) + (res & 0xffff)
+    res += res >> 16
+    return ~res & 0xffff
+
+
 # Create and bind raw socket
 SERVER_ADDRESS = "127.0.0.1"
 SERVER_PORT = 8000
@@ -19,16 +40,32 @@ while True:
     source_port = udp_data[0]
     dest_port = udp_data[1]
     length = udp_data[2]
-    checksum = udp_data[3]
 
     # Check if the packet matches the filter criteria
     if dest_port == SERVER_PORT:
+
+        # Check checksum
+        received_checksum = udp_data[3]
+
+        # Set checksum field to zero before calculating checksum
+        zero_checksum_header = udp_header[:6] + b'\x00\x00' + udp_header[8:]
+        calculated_checksum = udp_checksum(SERVER_ADDRESS, SERVER_ADDRESS, zero_checksum_header + data[28:])
+
+        if received_checksum != calculated_checksum:
+            print("Checksum does not match, packet might be corrupted")
+            continue  # Skip the rest of the loop and wait for the next packet
+
         # Extract destination port from data
         forward_port = struct.unpack('!H', data[28:30])[0]
 
         # Generate new UDP header with server port as source and dynamic port from data
         new_source_port = SERVER_PORT
         new_udp_header = struct.pack("!HHHH", new_source_port, forward_port, length, 0)
+
+        # Calculate new checksum
+        # TODO change destination address to actual client address
+        new_udp_checksum = udp_checksum(SERVER_ADDRESS, SERVER_ADDRESS, new_udp_header + data[28:])
+        new_udp_header = struct.pack("!HHHH", new_source_port, forward_port, length, new_udp_checksum)
 
         # Combine new header and original data for forwarding
         forwarded_packet = new_udp_header + data[28:]
