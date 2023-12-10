@@ -118,5 +118,3 @@ class VPN:
 
             print("---------------------------------------------------------")
 
-
-# Since the IP addresses cannot be voluntarily changed while the vpn is running, the restricting will be done via the ports
