@@ -48,7 +48,6 @@ while True:
         print(f"UDP packet received from {addr}")
         print(f"Source port: {source_port}, Destination port: {dest_port}")
         print(f"Length: {length}, Checksum: {checksum}")
-        print("---------------------------------------------------------")
 
         # Process the packet
         print("Received valid packet:", data[28:])
@@ -56,7 +55,8 @@ while True:
     else:
         # Discard the packet
         print("Ignoring packet coming from: ", source_port)
-        print("---------------------------------------------------------")
+
+    print("---------------------------------------------------------")
 
 # Close socket
 raw_socket.close()

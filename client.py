@@ -11,7 +11,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_UDP)
 
 # Define source and destination ports
 SOURCE_ADDRESS = "127.0.0.1"
-SOURCE_PORT = 45506
+SOURCE_PORT = 45624
 
 # Define real destination port and message
 REAL_DEST_PORT = 7000
@@ -32,7 +32,6 @@ packet = udp_header + data
 
 # Send the packet to the server
 sock.sendto(packet, (SERVER_ADDRESS, SERVER_PORT))
-print("Checksum is", udp_checksum)
 print(f"Sent UDP packet to {SERVER_ADDRESS}:{SERVER_PORT} with real destination port {REAL_DEST_PORT}")
 
 # Close the socket

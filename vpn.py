@@ -36,17 +36,24 @@ class VPN:
         self.restricted_vlans.add(vlan_id)
 
     def validate_user(self, sender_addr, sender_port):
-
-        print("Users: ", self.users)
-
         # Check if the sender's IP address and port are registered
-        if not any(user['ip_address'] == sender_addr and user['port'] == sender_port for user in self.users.values()):
+        user_data = next((user for user in self.users.values() if user['port'] == sender_port), None)
+        if user_data is None:
             print("Ignoring packet coming from unregistered user: ", sender_addr, ":", sender_port)
             return False
 
-        # TODO: Add validation for the second kind of user
+        print("Restricted users: ", self.restricted_users)
+        print("Sender port: ", sender_port)
 
-        # TODO: Add validation for the third kind of user
+        # Check if the sender's port is restricted
+        if str(sender_port) in self.restricted_users:
+            print("Ignoring packet coming from restricted port: ", sender_port)
+            return False
+
+        # Check if the user's VLAN is restricted
+        if str(user_data['vlan_id']) in self.restricted_vlans:
+            print("Ignoring packet from restricted VLAN: ", user_data['vlan_id'])
+            return False
 
         # If all validations pass, return True
         return True
@@ -74,10 +81,6 @@ class VPN:
                 # Check if the user is created and not restricted
                 if not self.validate_user(sender_addr, source_port):
                     continue
-
-                # if sender_addr not in [user['ip_address'] for user in self.users.values()] or sender_addr in self.restricted_users:
-                #     print("Ignoring packet coming from: ", sender_addr)
-                #     continue
 
                 # Check checksum
                 received_checksum = udp_data[3]
@@ -112,6 +115,8 @@ class VPN:
             else:
                 # Discard the packet
                 print("Ignoring packet coming from: ", source_port)
-                print("---------------------------------------------------------")
 
-# TODO: Since the IP addresses cannot be voluntarily changed while the vpn is running, the restricting will be done via the ports
+            print("---------------------------------------------------------")
+
+
+# Since the IP addresses cannot be voluntarily changed while the vpn is running, the restricting will be done via the ports
