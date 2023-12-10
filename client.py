@@ -11,7 +11,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_UDP)
 
 # Define source and destination ports
 SOURCE_ADDRESS = "127.0.0.1"
-SOURCE_PORT = 1234
+SOURCE_PORT = 45506
 
 # Define real destination port and message
 REAL_DEST_PORT = 7000

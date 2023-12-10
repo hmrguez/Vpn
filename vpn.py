@@ -24,16 +24,32 @@ class VPN:
             self.raw_socket = None
 
     def create_user(self, username, password, vlan_id):
-        # Assign an IP address to the user
-        ip_address = assign_ip_address()
-        self.users[username] = {'password': password, 'vlan_id': vlan_id, 'ip_address': ip_address}
-        print(f"User {username} created with IP address {ip_address}")
+        # Assign an IP address and a port to the user
+        ip_address, port = assign_ip_address()
+        self.users[username] = {'password': password, 'vlan_id': vlan_id, 'ip_address': ip_address, 'port': port}
+        print(f"User {username} created with IP address {ip_address}, port {port} and vlan {vlan_id}")
 
-    def restrict_user(self, ip_address):
-        self.restricted_users.add(ip_address)
+    def restrict_user(self, port):
+        self.restricted_users.add(port)
 
     def restrict_vlan(self, vlan_id):
         self.restricted_vlans.add(vlan_id)
+
+    def validate_user(self, sender_addr, sender_port):
+
+        print("Users: ", self.users)
+
+        # Check if the sender's IP address and port are registered
+        if not any(user['ip_address'] == sender_addr and user['port'] == sender_port for user in self.users.values()):
+            print("Ignoring packet coming from unregistered user: ", sender_addr, ":", sender_port)
+            return False
+
+        # TODO: Add validation for the second kind of user
+
+        # TODO: Add validation for the third kind of user
+
+        # If all validations pass, return True
+        return True
 
     def run(self):
         while True:
@@ -52,8 +68,13 @@ class VPN:
             # Check if the packet matches the filter criteria
             if dest_port == self.SERVER_PORT:
 
-                # Check if the user is created and not restricted
+                # Sender port is always 0 because it sends directly through the interface
                 sender_addr, sender_port = addr
+
+                # Check if the user is created and not restricted
+                if not self.validate_user(sender_addr, source_port):
+                    continue
+
                 # if sender_addr not in [user['ip_address'] for user in self.users.values()] or sender_addr in self.restricted_users:
                 #     print("Ignoring packet coming from: ", sender_addr)
                 #     continue
@@ -92,3 +113,5 @@ class VPN:
                 # Discard the packet
                 print("Ignoring packet coming from: ", source_port)
                 print("---------------------------------------------------------")
+
+# TODO: Since the IP addresses cannot be voluntarily changed while the vpn is running, the restricting will be done via the ports
