@@ -70,9 +70,6 @@ class VPN:
             print("Ignoring packet coming from unregistered user: ", sender_addr, ":", sender_port)
             return False
 
-        print("Restricted users: ", self.restricted_users)
-        print("Sender port: ", sender_port)
-
         # Check if the sender's port is restricted
         if str(sender_port) in self.restricted_users:
             print("Ignoring packet coming from restricted port: ", sender_port)
@@ -108,6 +105,7 @@ class VPN:
 
                 # Check if the user is created and not restricted
                 if not self.validate_user(sender_addr, source_port):
+                    print("---------------------------------------------------------")
                     continue
 
                 # Check checksum
@@ -145,4 +143,3 @@ class VPN:
                 print("Ignoring packet coming from: ", source_port)
 
             print("---------------------------------------------------------")
-
