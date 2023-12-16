@@ -1,5 +1,6 @@
 import socket
 import struct
+import json
 from checksum_utils import udp_checksum
 from utils import assign_ip_address
 
@@ -9,9 +10,30 @@ class VPN:
         self.SERVER_ADDRESS = "127.0.0.1"
         self.SERVER_PORT = 8000
         self.raw_socket = None
-        self.users = {}
-        self.restricted_users = set()
-        self.restricted_vlans = set()
+
+        try:
+            with open('users.json', 'r') as f:
+                self.users = json.load(f)
+        except FileNotFoundError:
+            self.users = {}
+            with open('users.json', 'w') as f:
+                json.dump(self.users, f)
+
+        try:
+            with open('restricted_users.json', 'r') as f:
+                self.restricted_users = set(json.load(f))
+        except FileNotFoundError:
+            self.restricted_users = set()
+            with open('restricted_users.json', 'w') as f:
+                json.dump(list(self.restricted_users), f)
+
+        try:
+            with open('restricted_vlans.json', 'r') as f:
+                self.restricted_vlans = set(json.load(f))
+        except FileNotFoundError:
+            self.restricted_vlans = set()
+            with open('restricted_vlans.json', 'w') as f:
+                json.dump(list(self.restricted_vlans), f)
 
     def start(self):
         self.raw_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_UDP)
@@ -27,13 +49,19 @@ class VPN:
         # Assign an IP address and a port to the user
         ip_address, port = assign_ip_address()
         self.users[username] = {'password': password, 'vlan_id': vlan_id, 'ip_address': ip_address, 'port': port}
+        with open('users.json', 'w') as f:
+            json.dump(self.users, f)
         print(f"User {username} created with IP address {ip_address}, port {port} and vlan {vlan_id}")
 
     def restrict_user(self, port):
         self.restricted_users.add(port)
+        with open('restricted_users.json', 'w') as f:
+            json.dump(list(self.restricted_users), f)
 
     def restrict_vlan(self, vlan_id):
         self.restricted_vlans.add(vlan_id)
+        with open('restricted_vlans.json', 'w') as f:
+            json.dump(list(self.restricted_vlans), f)
 
     def validate_user(self, sender_addr, sender_port):
         # Check if the sender's IP address and port are registered

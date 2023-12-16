@@ -1,2 +1,5 @@
 .idea
 guide.py
+restricted_users.json
+restricted_vlans.json
+users.json
