@@ -19,6 +19,10 @@ def main():
             vpn.restrict_vlan(command[1])
         elif command[0] == 'restrict_user':
             vpn.restrict_user(command[1])
+        elif command[0] == 'show_logs':
+            while not vpn.log_queue.empty():
+                print(vpn.log_queue.get())
+                print("---------------------------------------------------------")
         else:
             print("Invalid command")
 

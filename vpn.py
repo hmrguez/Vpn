@@ -1,15 +1,25 @@
+import os
+import queue
 import socket
 import struct
 import json
+import threading
+
 from checksum_utils import udp_checksum
 from utils import assign_ip_address
 
 
 class VPN:
     def __init__(self):
+        self.run_thread = None
         self.SERVER_ADDRESS = "127.0.0.1"
         self.SERVER_PORT = 8000
         self.raw_socket = None
+        self.log_queue = queue.Queue()
+
+        if not os.path.exists('logs.txt'):
+            with open('logs.txt', 'w') as f:
+                pass
 
         try:
             with open('users.json', 'r') as f:
@@ -38,7 +48,12 @@ class VPN:
     def start(self):
         self.raw_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_UDP)
         self.raw_socket.bind(('localhost', self.SERVER_PORT))
-        self.run()
+
+        # Create a new thread that will run the 'run' method, so we can still type in the console
+        self.run_thread = threading.Thread(target=self.run)
+        self.run_thread.start()
+
+        print(f"VPN started on {self.SERVER_ADDRESS}:{self.SERVER_PORT}")
 
     def stop(self):
         if self.raw_socket is not None:
@@ -51,7 +66,8 @@ class VPN:
         self.users[username] = {'password': password, 'vlan_id': vlan_id, 'ip_address': ip_address, 'port': port}
         with open('users.json', 'w') as f:
             json.dump(self.users, f)
-        print(f"User {username} created with IP address {ip_address}, port {port} and vlan {vlan_id}")
+
+        self.log_message(f"User {username} created with IP address {ip_address}, port {port} and vlan {vlan_id}")
 
     def restrict_user(self, port):
         self.restricted_users.add(port)
@@ -67,21 +83,29 @@ class VPN:
         # Check if the sender's IP address and port are registered
         user_data = next((user for user in self.users.values() if user['port'] == sender_port), None)
         if user_data is None:
-            print("Ignoring packet coming from unregistered user: ", sender_addr, ":", sender_port)
+            self.log_message(f"Ignored packet coming from unregistered user: {sender_addr}:{sender_port}")
             return False
 
         # Check if the sender's port is restricted
         if str(sender_port) in self.restricted_users:
-            print("Ignoring packet coming from restricted port: ", sender_port)
+            self.log_message(f"Ignored packet coming from restricted port: {sender_port}")
             return False
 
         # Check if the user's VLAN is restricted
         if str(user_data['vlan_id']) in self.restricted_vlans:
-            print("Ignoring packet from restricted VLAN: ", user_data['vlan_id'])
+            self.log_message(f"Ignored packet from restricted VLAN: {user_data['vlan_id']}")
             return False
 
         # If all validations pass, return True
         return True
+
+    def log_message(self, message):
+        # Add the message to the queue
+        self.log_queue.put(message)
+
+        # Write the message to the file
+        with open('logs.txt', 'a') as f:
+            f.write(message + '\n')
 
     def run(self):
         while True:
@@ -105,7 +129,6 @@ class VPN:
 
                 # Check if the user is created and not restricted
                 if not self.validate_user(sender_addr, source_port):
-                    print("---------------------------------------------------------")
                     continue
 
                 # Check checksum
@@ -116,7 +139,7 @@ class VPN:
                 calculated_checksum = udp_checksum(sender_addr, self.SERVER_ADDRESS, zero_checksum_header + data[28:])
 
                 if received_checksum != calculated_checksum:
-                    print("Checksum does not match, packet might be corrupted")
+                    self.log_message("Checksum does not match, packet might be corrupted")
                     continue  # Skip the rest of the loop and wait for the next packet
 
                 # Extract destination port from data
@@ -137,9 +160,8 @@ class VPN:
                 self.raw_socket.sendto(forwarded_packet, (self.SERVER_ADDRESS, forward_port))
 
                 # Print confirmation
-                print(f"Forwarded packet to {self.SERVER_ADDRESS}:{forward_port}")
+                self.log_message(f"Forwarded packet coming from {sender_addr}:{source_port} to {self.SERVER_ADDRESS}:{forward_port}")
             else:
                 # Discard the packet
-                print("Ignoring packet coming from: ", source_port)
-
-            print("---------------------------------------------------------")
+                # print("Ignoring packet coming from: ", source_port)
+                self.log_message(f"Ignored packet coming from {source_port}")
