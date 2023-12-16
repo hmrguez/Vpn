@@ -58,8 +58,10 @@ To use this project, follow these steps:
 
 1. Start the VPN by running `vpn_cli.py` and entering the `start` command.
 2. Create a user by entering the `create_user <username> <password> <vlan_id>` command.
-3. Run `client.py` to send a packet to the VPN.
-4. Run `server.py` to receive the packet from the VPN.
+3. Run `server.py` to receive a packet from the VPN.
+4. Run `client.py` to send the packet to the VPN.
+
+> Depending on the permissions your system has you may need to run these commands with the sudo keyword
 
 You can restrict users and VLANs by entering the `restrict_user <port>` and `restrict_vlan <vlan_id>` commands in the VPN CLI.
 
