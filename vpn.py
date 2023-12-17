@@ -4,6 +4,9 @@ import json
 import socket
 import threading
 
+from utils import assign_ip_address
+
+
 
 class VPN:
     def __init__(self):
@@ -52,3 +55,18 @@ class VPN:
         self.run_thread.start()
 
         print(f"VPN started on {self.SERVER_ADDRESS}:{self.SERVER_PORT}")
+
+    def stop(self):
+        if self.run_thread is not None:
+            self.raw_socket.close()
+            self.raw_socket = None
+            self.run_thread = None
+    
+    def create_user(self, username, password, vlan_id):
+        # Assign an IP address and a port to the user
+        ip_address, port = assign_ip_address()
+        self.users[username] = {'password': password, 'vlan_id': vlan_id, 'ip_address': ip_address, 'port': port}
+        with open('users.json', 'w') as f:
+            json.dump(self.users, f)
+
+        self.log_message(f"User {username} created with IP address {ip_address}, port {port} and vlan {vlan_id}")
