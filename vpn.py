@@ -1,14 +1,12 @@
 import os
 import queue
-import json
 import socket
-import threading
 import struct
+import json
+import threading
 
-from utils import assign_ip_address
 from checksum_utils import udp_checksum
-
-
+from utils import assign_ip_address
 
 
 class VPN:
@@ -47,7 +45,7 @@ class VPN:
             self.restricted_vlans = set()
             with open('restricted_vlans.json', 'w') as f:
                 json.dump(list(self.restricted_vlans), f)
-    
+
     def start(self):
         self.raw_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_UDP)
         self.raw_socket.bind(('localhost', self.SERVER_PORT))
@@ -64,7 +62,7 @@ class VPN:
             self.raw_socket.close()
             self.raw_socket = None
             self.run_thread = None
-    
+
     def create_user(self, username, password, vlan_id):
         # Assign an IP address and a port to the user
         ip_address, port = assign_ip_address()
@@ -111,7 +109,7 @@ class VPN:
         # Write the message to the file
         with open('logs.txt', 'a') as f:
             f.write(message + '\n')
-    
+
     def run(self):
         while True:
             try:
