@@ -70,3 +70,41 @@ class VPN:
             json.dump(self.users, f)
 
         self.log_message(f"User {username} created with IP address {ip_address}, port {port} and vlan {vlan_id}")
+
+    def restrict_user(self, port):
+        self.restricted_users.add(port)
+        with open('restricted_users.json', 'w') as f:
+            json.dump(list(self.restricted_users), f)
+
+    def restrict_vlan(self, vlan_id):
+        self.restricted_vlans.add(vlan_id)
+        with open('restricted_vlans.json', 'w') as f:
+            json.dump(list(self.restricted_vlans), f)
+
+    def validate_user(self, sender_addr, sender_port):
+        # Check if the sender's IP address and port are registered
+        user_data = next((user for user in self.users.values() if user['port'] == sender_port), None)
+        if user_data is None:
+            self.log_message(f"Ignored packet coming from unregistered user: {sender_addr}:{sender_port}")
+            return False
+
+        # Check if the sender's port is restricted
+        if str(sender_port) in self.restricted_users:
+            self.log_message(f"Ignored packet coming from restricted port: {sender_port}")
+            return False
+
+        # Check if the user's VLAN is restricted
+        if str(user_data['vlan_id']) in self.restricted_vlans:
+            self.log_message(f"Ignored packet from restricted VLAN: {user_data['vlan_id']}")
+            return False
+
+        # If all validations pass, return True
+        return True
+
+    def log_message(self, message):
+        # Add the message to the queue
+        self.log_queue.put(message)
+
+        # Write the message to the file
+        with open('logs.txt', 'a') as f:
+            f.write(message + '\n')
