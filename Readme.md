@@ -40,6 +40,7 @@ The VPN CLI provides a command-line interface for controlling the VPN. It suppor
 - `create_user <username> <password> <vlan_id>`: Creates a user with the given username, password, and VLAN ID. The user is assigned a random IP address and port.
 - `restrict_user <port>`: Restricts the user with the given port.
 - `restrict_vlan <vlan_id>`: Restricts the VLAN with the given VLAN ID.
+- `show_logs`: Shows log messages
 
 ### `checksum_utils.py`
 
@@ -99,6 +100,17 @@ The data follows the header and contains the payload of the datagram.
 - UDP does not ensure that the data is received in the same order it was sent. This means that UDP does not have sequence numbers like TCP.
 - The simplicity and speed of UDP come at the cost of reliability. Applications that use UDP must be able to handle lost, duplicate, and out-of-order packets.
 - Despite its limitations, UDP is used in many important Internet protocols, including DNS (Domain Name System), DHCP (Dynamic Host Configuration Protocol), and RTP (Real-time Transport Protocol).
+
+## System Details
+
+- When the `start` command is executed on `vpn_cli.py` a new thread is created that will execute the 'run' method, so we can still type other commands in the console.
+
+- Every action will create a log message that will be stored in the `logs.txt` to be shown when it is requested.
+
+- The users created with the command `create_user` in `vpn_cli.py` will be saved in users.json.
+
+- The restricted users and vlans will be stored in `restricted_users.json` and `restricted_vlans.json` respectively.
+
 
 ## References
 
