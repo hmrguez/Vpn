@@ -33,6 +33,7 @@ while True:
 
         # Check checksum
         received_checksum = udp_data[3]
+        real_source_ip, real_source_port, message = data[30:].decode().split('%')
 
         sender_address, sender_port = addr
 
@@ -45,12 +46,12 @@ while True:
 
         # Print basic information
         print("Basic Information: ")
-        print(f"UDP packet received from {addr}")
-        print(f"Source port: {source_port}, Destination port: {dest_port}")
+        print(f"UDP packet received from {real_source_ip}")
+        print(f"Source port: {real_source_port}, Destination port: {dest_port}")
         print(f"Length: {length}, Checksum: {checksum}")
 
         # Process the packet
-        print("Received valid packet:", data[28:])
+        print("Received valid packet:", message)
         process_data(data[28:])
     else:
         # Discard the packet

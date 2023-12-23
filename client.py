@@ -13,15 +13,21 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_UDP)
 
 # Define source and destination ports
 SOURCE_ADDRESS = "127.0.0.1"
-SOURCE_PORT = 63402
+SOURCE_PORT = 3000
 
 # Define real destination port and message
 REAL_DEST_PORT = 7000
+
+USERNAME = "Hector"
+PASSWORD = "1234"
 
 # Build a string array of 10 strings that build up a coherent message
 messages = ["Hello", "from", "the", "client", "!", "How", "is", "it", "going", "?!"]
 
 for i in range(len(messages)):
+
+    # Let message be username%password%message[i]
+    messages[i] = USERNAME + "%" + PASSWORD + "%" + messages[i]
 
     message = messages[i].encode()
     # Pack the real destination port before actual data

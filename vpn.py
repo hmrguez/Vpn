@@ -82,25 +82,29 @@ class VPN:
         with open('restricted_vlans.json', 'w') as f:
             json.dump(list(self.restricted_vlans), f)
 
-    def validate_user(self, sender_addr, sender_port):
+    def validate_user(self, sender_addr, sender_port, username, password):
         # Check if the sender's IP address and port are registered
-        user_data = next((user for user in self.users.values() if user['port'] == sender_port), None)
+        user_data = self.users.get(username)
         if user_data is None:
             self.log_message(f"Ignored packet coming from unregistered user: {sender_addr}:{sender_port}")
-            return False
+            return None
+
+        if user_data['password'] != password:
+            self.log_message(f"Ignored packet coming from user with wrong password: {sender_addr}:{sender_port}")
+            return None
 
         # Check if the sender's port is restricted
         if str(sender_port) in self.restricted_users:
             self.log_message(f"Ignored packet coming from restricted port: {sender_port}")
-            return False
+            return None
 
         # Check if the user's VLAN is restricted
         if str(user_data['vlan_id']) in self.restricted_vlans:
             self.log_message(f"Ignored packet from restricted VLAN: {user_data['vlan_id']}")
-            return False
+            return None
 
         # If all validations pass, return True
-        return True
+        return user_data
 
     def log_message(self, message):
         # Add the message to the queue
@@ -124,15 +128,20 @@ class VPN:
                 source_port = udp_data[0]
                 dest_port = udp_data[1]
                 length = udp_data[2]
+                sender_addr, sender_port = addr
 
                 # Check if the packet matches the filter criteria
                 if dest_port == self.SERVER_PORT:
 
                     # Sender port is always 0 because it sends directly through the interface
-                    sender_addr, sender_port = addr
+
+                    username, password, message = data[30:].decode().split('%')
+                    # print("Username: ", username, "Password: ", password, "Message: ", message)
 
                     # Check if the user is created and not restricted
-                    if not self.validate_user(sender_addr, source_port):
+
+                    user = self.validate_user(sender_addr, source_port, username, password)
+                    if user is None:
                         continue
 
                     # Check checksum
@@ -157,18 +166,21 @@ class VPN:
                     new_udp_checksum = udp_checksum(self.SERVER_ADDRESS, self.SERVER_ADDRESS, new_udp_header + data[28:])
                     new_udp_header = struct.pack("!HHHH", new_source_port, forward_port, length, new_udp_checksum)
 
-                    # Combine new header and original data for forwarding
-                    forwarded_packet = new_udp_header + data[28:]
+                    # Create new packet with new header and data = user['ip_address'] + % + message
+                    message = user['ip_address'] + "%" + str(user['port']) + "%" + message
+                    new_data = struct.pack(">H", forward_port) + message.encode()
+
+                    forwarded_packet = new_udp_header + new_data
 
                     # Send the forwarded packet
                     self.raw_socket.sendto(forwarded_packet, (self.SERVER_ADDRESS, forward_port))
 
                     # Print confirmation
                     self.log_message(
-                        f"Forwarded packet coming from {sender_addr}:{source_port} to {self.SERVER_ADDRESS}:{forward_port}")
+                        f"Forwarded packet coming from {sender_addr}:{source_port} to {self.SERVER_ADDRESS}:{forward_port} with fake address {user['ip_address']}:{user['port']}")
                 else:
                     # Discard the packet
-                    self.log_message(f"Ignored packet coming from {source_port}")
+                    self.log_message(f"Ignored packet coming from {sender_addr}:{source_port}")
             except AttributeError:
                 if self.raw_socket is None:
                     break
